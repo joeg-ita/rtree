@@ -8,9 +8,7 @@ import (
 
 func TestAddNodesToChildren(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	node := r.NewNode("test", "test value")
 
@@ -23,9 +21,7 @@ func TestAddNodesToChildren(t *testing.T) {
 
 func TestDeleteNodeFromChildren(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	node1 := r.NewNode("test1", "test value 1")
 	node2 := r.NewNode("test2", "test value 2")
@@ -45,8 +41,7 @@ func TestDeleteNodeFromChildren(t *testing.T) {
 
 func TestAdd(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
@@ -63,10 +58,25 @@ func TestAdd(t *testing.T) {
 	}
 }
 
+func TestAdd2(t *testing.T) {
+
+	rtree := r.NewRTree()
+
+	keys := []string{"test", "te", "testing", "tea"}
+
+	for _, k := range keys {
+		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+	}
+	r.PrintNode(rtree.Root, true)
+
+	if len(rtree.Root.Children) != 1 {
+		t.Errorf(`rtree.Root.Children error len=%d`, len(rtree.Root.Children))
+	}
+}
+
 func TestSearchKeyIsPresent(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
@@ -85,8 +95,7 @@ func TestSearchKeyIsPresent(t *testing.T) {
 
 func TestSearchKeyIsNotPresent(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
@@ -106,8 +115,7 @@ func TestSearchKeyIsNotPresent(t *testing.T) {
 
 func TestSearchInternmediateKeyIsPresent(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
@@ -127,8 +135,7 @@ func TestSearchInternmediateKeyIsPresent(t *testing.T) {
 
 func TestSearchChunkOfPresentKey(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
@@ -147,8 +154,7 @@ func TestSearchChunkOfPresentKey(t *testing.T) {
 }
 
 func TestCompact(t *testing.T) {
-	root := r.NewNode(r.ROOT, r.ROOT)
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 	for _, k := range keys {
@@ -165,8 +171,7 @@ func TestCompact(t *testing.T) {
 
 func TestDeleteNodeWithoutChildren(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 	for _, k := range keys {
@@ -184,8 +189,7 @@ func TestDeleteNodeWithoutChildren(t *testing.T) {
 
 func TestDeleteNodeWithChildrenAndCompact(t *testing.T) {
 
-	root := r.NewNode(r.ROOT, r.ROOT)
-	rtree := &r.RTree{Root: root}
+	rtree := r.NewRTree()
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 	for _, k := range keys {
