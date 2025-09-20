@@ -67,9 +67,7 @@ func DeleteNodeFromChildren(parentNode *Node, index int) *Node {
 
 func Add(key string, value string, tree *RTree) bool {
 	fmt.Printf("Add key=[%s] value=[%s]\n", key, value)
-	result := false
-	addHandler(key, value, tree.Root)
-	return result
+	return addHandler(key, value, tree.Root)
 }
 
 func addHandler(key string, value string, node *Node) bool {
@@ -101,6 +99,8 @@ func addHandler(key string, value string, node *Node) bool {
 		tmpKeyOffset = ""
 		tmpKeyOrphan = ""
 		if n.Key[0] != key[0] {
+			selectedNode = nil
+			childrenIndex = -1
 			continue
 		}
 		for j := 0; j < len(n.Key) && j < len(key); j++ {
@@ -138,7 +138,7 @@ func addHandler(key string, value string, node *Node) bool {
 		break
 	}
 	var newNode *Node
-	if len(selectedNode.Children) > 0 {
+	if selectedNode != nil && len(selectedNode.Children) > 0 {
 		fmt.Println("len(currentNode.Children)", len(selectedNode.Children))
 	}
 	if tmpKeyAlreadyPresent && tmpKeyOffset == "" {
@@ -147,7 +147,7 @@ func addHandler(key string, value string, node *Node) bool {
 		currentNode.Value = value
 		return true
 	}
-	if tmpKeyAlreadyPresent && tmpKeyOffset != "" {
+	if selectedNode != nil && tmpKeyAlreadyPresent && tmpKeyOffset != "" {
 		return addHandler(tmpKeyOffset, value, selectedNode)
 	}
 	if tmpKeyOrphan == "" && tmpKey == "" && tmpKeyOffset == "" {
@@ -156,41 +156,47 @@ func addHandler(key string, value string, node *Node) bool {
 		return true
 	} else if tmpKeyOrphan != "" && tmpKey != "" && tmpKeyOffset != "" {
 		currentNode := node.Children[childrenIndex]
+
+		originalIsEnd := currentNode.IsEnd
+		originalValue := currentNode.Value
+
 		currentNode.Key = tmpKey
 		currentNode.IsEnd = false
+		currentNode.Value = ""
 
 		orphanNode := NewNode(tmpKeyOrphan, "")
-		if currentNode.IsEnd {
+		if originalIsEnd {
 			orphanNode.IsEnd = true
-			orphanNode.Value = currentNode.Value
+			orphanNode.Value = originalValue
 		}
-		currentNode.Value = ""
+
 		AddNodesToChildren(orphanNode, currentNode.Children...)
 		currentNode.Children = []*Node{}
 		AddNodesToChildren(currentNode, orphanNode)
 
-		newNode = NewNode(tmpKeyOffset, value)
+		newNode := NewNode(tmpKeyOffset, value)
 		AddNodesToChildren(currentNode, newNode)
 
 		return true
 	} else if tmpKeyOrphan != "" && tmpKey != "" && tmpKeyOffset == "" {
 		currentNode := node.Children[childrenIndex]
 		currentNode.Key = tmpKey
-		currentNode.IsEnd = false
 
-		orphanNode := NewNode(tmpKeyOrphan, "")
+		orphanNode := NewNode(tmpKeyOrphan, currentNode.Value)
 		if currentNode.IsEnd {
 			orphanNode.IsEnd = true
-			orphanNode.Value = currentNode.Value
 		}
-		currentNode.Value = ""
+
+		currentNode.IsEnd = true
+		currentNode.Value = value
+
 		AddNodesToChildren(orphanNode, currentNode.Children...)
 		currentNode.Children = []*Node{}
 		AddNodesToChildren(currentNode, orphanNode)
 
 		return true
 	} else if tmpKeyOffset != "" && tmpKeyOrphan == "" {
-		newNode = NewNode(tmpKeyOffset, "")
+		newNode = NewNode(tmpKeyOffset, value)
 		AddNodesToChildren(node.Children[childrenIndex], newNode)
 		return true
 	}
