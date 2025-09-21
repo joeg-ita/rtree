@@ -60,13 +60,13 @@ func AddNodesToChildren(parentNode *Node, nodesToAdd ...*Node) *Node {
 }
 
 func DeleteNodeFromChildren(parentNode *Node, index int) *Node {
-	fmt.Printf("Deleting children node with key=[%s] from key=[%s]\n", parentNode.Children[index].Key, parentNode.Key)
+	//fmt.Printf("Deleting children node with key=[%s] from key=[%s]\n", parentNode.Children[index].Key, parentNode.Key)
 	parentNode.Children = append(parentNode.Children[:index], parentNode.Children[index+1:]...)
 	return parentNode
 }
 
 func Add(key string, value string, tree *RTree) bool {
-	fmt.Printf("Add key=[%s] value=[%s]\n", key, value)
+	// fmt.Printf("Add key=[%s] value=[%s]\n", key, value)
 	return addHandler(key, value, tree.Root)
 }
 
@@ -74,7 +74,7 @@ func addHandler(key string, value string, node *Node) bool {
 	result := false
 
 	if key == node.Key {
-		fmt.Printf("key %s already present n.Key %s\n", key, node.Key)
+		//fmt.Printf("key %s already present n.Key %s\n", key, node.Key)
 		return false
 	}
 
@@ -98,7 +98,7 @@ func addHandler(key string, value string, node *Node) bool {
 		tmpKey = ""
 		tmpKeyOffset = ""
 		tmpKeyOrphan = ""
-		if n.Key[0] != key[0] {
+		if len(n.Key) == 0 || len(key) == 0 || n.Key[0] != key[0] {
 			selectedNode = nil
 			childrenIndex = -1
 			continue
@@ -113,33 +113,33 @@ func addHandler(key string, value string, node *Node) bool {
 		if tmpKey == n.Key {
 			tmpKeyAlreadyPresent = true
 		}
-		if len(key) > len(n.Key) {
+		if len(tmpKey) < len(key) {
 			tmpKeyOffset = key[len(tmpKey):]
 		}
 		if len(tmpKey) < len(n.Key) {
 			tmpKeyOrphan = n.Key[len(tmpKey):]
 		}
-		if tmpKeyOrphan != "" {
-			fmt.Println("tmpKeyOrphan", tmpKeyOrphan)
-		}
-		if childrenIndex != -1 {
-			fmt.Println("childrenIndex", childrenIndex)
-		}
-		if tmpKey != "" {
-			fmt.Println("tmpKey", tmpKey)
-		}
-		if tmpKeyOffset != "" {
-			fmt.Println("tmpKeyOffset", tmpKeyOffset)
-		}
-		if tmpKeyAlreadyPresent {
-			fmt.Println("tmpKeyAlreadyPresent", tmpKeyAlreadyPresent)
-		}
-		fmt.Println("--------------------------")
+		// if tmpKeyOrphan != "" {
+		// 	fmt.Println("tmpKeyOrphan", tmpKeyOrphan)
+		// }
+		// if childrenIndex != -1 {
+		// 	fmt.Println("childrenIndex", childrenIndex)
+		// }
+		// if tmpKey != "" {
+		// 	fmt.Println("tmpKey", tmpKey)
+		// }
+		// if tmpKeyOffset != "" {
+		// 	fmt.Println("tmpKeyOffset", tmpKeyOffset)
+		// }
+		// if tmpKeyAlreadyPresent {
+		// 	fmt.Println("tmpKeyAlreadyPresent", tmpKeyAlreadyPresent)
+		// }
+		// fmt.Println("--------------------------")
 		break
 	}
 	var newNode *Node
 	if selectedNode != nil && len(selectedNode.Children) > 0 {
-		fmt.Println("len(currentNode.Children)", len(selectedNode.Children))
+		//fmt.Println("len(currentNode.Children)", len(selectedNode.Children))
 	}
 	if tmpKeyAlreadyPresent && tmpKeyOffset == "" {
 		currentNode := node.Children[childrenIndex]
@@ -150,7 +150,9 @@ func addHandler(key string, value string, node *Node) bool {
 	if selectedNode != nil && tmpKeyAlreadyPresent && tmpKeyOffset != "" {
 		return addHandler(tmpKeyOffset, value, selectedNode)
 	}
-	if tmpKeyOrphan == "" && tmpKey == "" && tmpKeyOffset == "" {
+	if tmpKeyOrphan == "" && tmpKey != "" && tmpKeyOffset != "" {
+		return addHandler(tmpKeyOffset, value, selectedNode)
+	} else if tmpKeyOrphan == "" && tmpKey == "" && tmpKeyOffset == "" {
 		newNode = NewNode(key, value)
 		AddNodesToChildren(node, newNode)
 		return true
@@ -173,7 +175,6 @@ func addHandler(key string, value string, node *Node) bool {
 		AddNodesToChildren(orphanNode, currentNode.Children...)
 		currentNode.Children = []*Node{}
 		AddNodesToChildren(currentNode, orphanNode)
-
 		newNode := NewNode(tmpKeyOffset, value)
 		AddNodesToChildren(currentNode, newNode)
 
@@ -205,18 +206,18 @@ func addHandler(key string, value string, node *Node) bool {
 }
 
 func Search(key string, tree RTree) *Node {
-	fmt.Printf("Search key=[%s]\n", key)
+	//fmt.Printf("Search key=[%s]\n", key)
 	return searchHandler(key, "", tree.Root, nil, 0, -1)
 }
 
 func searchHandler(key string, foundedKeyPart string, node *Node, parentNode *Node, level int, index int) *Node {
-	// fmt.Printf("key=[%s] foundedKeyPart=[%s] node.Key=[%s]\n", key, foundedKeyPart, node.Key)
+	// //fmt.Printf("key=[%s] foundedKeyPart=[%s] node.Key=[%s]\n", key, foundedKeyPart, node.Key)
 	keyToCheck := fmt.Sprintf("%s%s", foundedKeyPart, key)
 
 	nodeKey := fmt.Sprintf("%s%s", foundedKeyPart, node.Key)
-	// fmt.Printf("keyToCheck[%s]==[%s]nodeKey node.IsEnd=[%v]\n", keyToCheck, nodeKey, node.IsEnd)
+	// //fmt.Printf("keyToCheck[%s]==[%s]nodeKey node.IsEnd=[%v]\n", keyToCheck, nodeKey, node.IsEnd)
 	if keyToCheck == nodeKey && node.IsEnd {
-		// fmt.Printf("Found at level %d\n", level)
+		// //fmt.Printf("Found at level %d\n", level)
 		node.parentNode = parentNode
 		node.index = index
 		return node
@@ -224,10 +225,10 @@ func searchHandler(key string, foundedKeyPart string, node *Node, parentNode *No
 
 	tmpFoundedKeyParts := ""
 	tmpKey := keyToCheck
-	// fmt.Printf("strings.HasPrefix([%s], node.Key[%s])\n", keyToCheck, node.Key)
-	if strings.HasPrefix(keyToCheck, node.Key) {
-		tmpFoundedKeyParts = keyToCheck[:len(node.Key)]
-		tmpKey = keyToCheck[len(node.Key):]
+	// //fmt.Printf("strings.HasPrefix([%s], node.Key[%s])\n", keyToCheck, node.Key)
+	if strings.HasPrefix(keyToCheck, nodeKey) {
+		tmpFoundedKeyParts = nodeKey
+		tmpKey = keyToCheck[len(nodeKey):]
 	}
 
 	for i, n := range node.Children {
@@ -243,7 +244,7 @@ func searchHandler(key string, foundedKeyPart string, node *Node, parentNode *No
 }
 
 func Delete(key string, tree *RTree) bool {
-	fmt.Printf("Delete key=[%s]\n", key)
+	//fmt.Printf("Delete key=[%s]\n", key)
 	node := Search(key, *tree)
 	if node != nil && node.IsEnd && len(node.Children) == 0 {
 		DeleteNodeFromChildren(node.parentNode, node.index)
@@ -257,7 +258,7 @@ func Delete(key string, tree *RTree) bool {
 }
 
 func Compact(tree *RTree) {
-	fmt.Printf("Compact tree\n")
+	//fmt.Printf("Compact tree\n")
 	root := tree.Root
 	for _, n := range root.Children {
 		compactHandler(n)
