@@ -10,10 +10,9 @@ const ROOT = "ROOT"
 type Node struct {
 	Key        string
 	Value      string
-	Children   []*Node
+	Children   map[string]*Node
 	IsEnd      bool
 	parentNode *Node
-	index      int
 }
 
 type RTree struct {
@@ -38,7 +37,7 @@ func NewNode(key string, value string) *Node {
 	return &Node{
 		Key:        key,
 		Value:      value,
-		Children:   []*Node{},
+		Children:   map[string]*Node{},
 		IsEnd:      true,
 		parentNode: nil,
 	}
@@ -48,25 +47,30 @@ func NewRTree() *RTree {
 	return &RTree{
 		Root: &Node{
 			Key:      ROOT,
-			Children: []*Node{},
+			Children: map[string]*Node{},
 			IsEnd:    false,
 		},
 	}
 }
 
-func AddNodesToChildren(parentNode *Node, nodesToAdd ...*Node) *Node {
-	parentNode.Children = append(parentNode.Children, nodesToAdd...)
+func AddNodesToChildren(parentNode *Node, nodes ...*Node) *Node {
+	parentNode.Children = appendNodesToMap(parentNode.Children, nodes...)
 	return parentNode
 }
 
-func DeleteNodeFromChildren(parentNode *Node, index int) *Node {
-	//fmt.Printf("Deleting children node with key=[%s] from key=[%s]\n", parentNode.Children[index].Key, parentNode.Key)
-	parentNode.Children = append(parentNode.Children[:index], parentNode.Children[index+1:]...)
+func AddChildrenToNodeChildren(parentNode *Node, nodesToAdd ...map[string]*Node) *Node {
+	for _, v := range nodesToAdd {
+		parentNode.Children = appendChildrenMapToMap(parentNode.Children, v)
+	}
+	return parentNode
+}
+
+func DeleteNodeFromChildren(parentNode *Node, key string) *Node {
+	delete(parentNode.Children, key)
 	return parentNode
 }
 
 func Add(key string, value string, tree *RTree) bool {
-	// fmt.Printf("Add key=[%s] value=[%s]\n", key, value)
 	return addHandler(key, value, tree.Root)
 }
 
@@ -74,7 +78,6 @@ func addHandler(key string, value string, node *Node) bool {
 	result := false
 
 	if key == node.Key {
-		//fmt.Printf("key %s already present n.Key %s\n", key, node.Key)
 		return false
 	}
 
@@ -90,17 +93,17 @@ func addHandler(key string, value string, node *Node) bool {
 	tmpKeyAlreadyPresent := false
 	tmpKeyOffset := ""
 	tmpKeyOrphan := ""
-	childrenIndex := -1
+	childKey := ""
 	var selectedNode *Node
-	for i, n := range node.Children {
+	for k, n := range node.Children {
 		selectedNode = n
-		childrenIndex = i
+		childKey = k
 		tmpKey = ""
 		tmpKeyOffset = ""
 		tmpKeyOrphan = ""
 		if len(n.Key) == 0 || len(key) == 0 || n.Key[0] != key[0] {
 			selectedNode = nil
-			childrenIndex = -1
+			childKey = ""
 			continue
 		}
 		for j := 0; j < len(n.Key) && j < len(key); j++ {
@@ -119,30 +122,11 @@ func addHandler(key string, value string, node *Node) bool {
 		if len(tmpKey) < len(n.Key) {
 			tmpKeyOrphan = n.Key[len(tmpKey):]
 		}
-		// if tmpKeyOrphan != "" {
-		// 	fmt.Println("tmpKeyOrphan", tmpKeyOrphan)
-		// }
-		// if childrenIndex != -1 {
-		// 	fmt.Println("childrenIndex", childrenIndex)
-		// }
-		// if tmpKey != "" {
-		// 	fmt.Println("tmpKey", tmpKey)
-		// }
-		// if tmpKeyOffset != "" {
-		// 	fmt.Println("tmpKeyOffset", tmpKeyOffset)
-		// }
-		// if tmpKeyAlreadyPresent {
-		// 	fmt.Println("tmpKeyAlreadyPresent", tmpKeyAlreadyPresent)
-		// }
-		// fmt.Println("--------------------------")
 		break
 	}
 	var newNode *Node
-	if selectedNode != nil && len(selectedNode.Children) > 0 {
-		//fmt.Println("len(currentNode.Children)", len(selectedNode.Children))
-	}
 	if tmpKeyAlreadyPresent && tmpKeyOffset == "" {
-		currentNode := node.Children[childrenIndex]
+		currentNode := node.Children[childKey]
 		currentNode.IsEnd = true
 		currentNode.Value = value
 		return true
@@ -157,7 +141,7 @@ func addHandler(key string, value string, node *Node) bool {
 		AddNodesToChildren(node, newNode)
 		return true
 	} else if tmpKeyOrphan != "" && tmpKey != "" && tmpKeyOffset != "" {
-		currentNode := node.Children[childrenIndex]
+		currentNode := node.Children[childKey]
 
 		originalIsEnd := currentNode.IsEnd
 		originalValue := currentNode.Value
@@ -166,21 +150,24 @@ func addHandler(key string, value string, node *Node) bool {
 		currentNode.IsEnd = false
 		currentNode.Value = ""
 
+		delete(node.Children, childKey)
+		node.Children[tmpKey] = currentNode
+
 		orphanNode := NewNode(tmpKeyOrphan, "")
 		if originalIsEnd {
 			orphanNode.IsEnd = true
 			orphanNode.Value = originalValue
 		}
 
-		AddNodesToChildren(orphanNode, currentNode.Children...)
-		currentNode.Children = []*Node{}
+		AddChildrenToNodeChildren(orphanNode, currentNode.Children)
+		currentNode.Children = map[string]*Node{}
 		AddNodesToChildren(currentNode, orphanNode)
 		newNode := NewNode(tmpKeyOffset, value)
 		AddNodesToChildren(currentNode, newNode)
 
 		return true
 	} else if tmpKeyOrphan != "" && tmpKey != "" && tmpKeyOffset == "" {
-		currentNode := node.Children[childrenIndex]
+		currentNode := node.Children[childKey]
 		currentNode.Key = tmpKey
 
 		orphanNode := NewNode(tmpKeyOrphan, currentNode.Value)
@@ -191,74 +178,86 @@ func addHandler(key string, value string, node *Node) bool {
 		currentNode.IsEnd = true
 		currentNode.Value = value
 
-		AddNodesToChildren(orphanNode, currentNode.Children...)
-		currentNode.Children = []*Node{}
+		delete(node.Children, childKey)
+		node.Children[tmpKey] = currentNode
+
+		AddChildrenToNodeChildren(orphanNode, currentNode.Children)
+		currentNode.Children = map[string]*Node{}
 		AddNodesToChildren(currentNode, orphanNode)
 
 		return true
 	} else if tmpKeyOffset != "" && tmpKeyOrphan == "" {
 		newNode = NewNode(tmpKeyOffset, value)
-		AddNodesToChildren(node.Children[childrenIndex], newNode)
+		AddNodesToChildren(node.Children[childKey], newNode)
 		return true
 	}
 
 	return result
 }
 
-func Search(key string, tree RTree) *Node {
-	//fmt.Printf("Search key=[%s]\n", key)
-	return searchHandler(key, "", tree.Root, nil, 0, -1)
+func Search(key string, tree *RTree) *Node {
+	return searchHandler(key, "", tree.Root, nil, 0)
 }
 
-func searchHandler(key string, foundedKeyPart string, node *Node, parentNode *Node, level int, index int) *Node {
-	// //fmt.Printf("key=[%s] foundedKeyPart=[%s] node.Key=[%s]\n", key, foundedKeyPart, node.Key)
-	keyToCheck := fmt.Sprintf("%s%s", foundedKeyPart, key)
+func searchHandler(key string, foundedKeyPart string, node *Node, parentNode *Node, level int) *Node {
 
-	nodeKey := fmt.Sprintf("%s%s", foundedKeyPart, node.Key)
-	// //fmt.Printf("keyToCheck[%s]==[%s]nodeKey node.IsEnd=[%v]\n", keyToCheck, nodeKey, node.IsEnd)
-	if keyToCheck == nodeKey && node.IsEnd {
-		// //fmt.Printf("Found at level %d\n", level)
-		node.parentNode = parentNode
-		node.index = index
-		return node
-	}
+	search := true
+	for search {
+		search = false
 
-	tmpFoundedKeyParts := ""
-	tmpKey := keyToCheck
-	// //fmt.Printf("strings.HasPrefix([%s], node.Key[%s])\n", keyToCheck, node.Key)
-	if strings.HasPrefix(keyToCheck, nodeKey) {
-		tmpFoundedKeyParts = nodeKey
-		tmpKey = keyToCheck[len(nodeKey):]
-	}
+		keyToCheck := fmt.Sprintf("%s%s", foundedKeyPart, key)
+		nod, exists := node.Children[keyToCheck]
+		if exists && nod.IsEnd {
+			return nod
+		} else {
 
-	for i, n := range node.Children {
-		node := searchHandler(tmpKey, tmpFoundedKeyParts, n, node, (level + 1), i)
-		if node != nil {
-			return node
+			for k, child := range node.Children {
+
+				nodeKey := fmt.Sprintf("%s%s", foundedKeyPart, k)
+				if keyToCheck == nodeKey && child.IsEnd {
+					child.parentNode = node
+					return child
+				}
+
+				tmpFoundedKeyParts := ""
+				tmpKey := keyToCheck
+
+				if strings.HasPrefix(tmpKey, nodeKey) {
+					tmpFoundedKeyParts = nodeKey
+					tmpKey = keyToCheck[len(nodeKey):]
+				} else {
+					continue
+				}
+
+				key = tmpKey
+				foundedKeyPart = tmpFoundedKeyParts
+				search = true
+				parentNode = node
+				node = child
+				level = level + 1
+				break
+			}
+
 		}
-		if level == 1 && tmpFoundedKeyParts == "" {
-			break
-		}
+
 	}
 	return nil
 }
 
 func Delete(key string, tree *RTree) bool {
-	//fmt.Printf("Delete key=[%s]\n", key)
-	node := Search(key, *tree)
-	if node != nil && node.IsEnd && len(node.Children) == 0 {
-		DeleteNodeFromChildren(node.parentNode, node.index)
+	node := Search(key, tree)
+	if node != nil && node.parentNode != nil && node.IsEnd && len(node.Children) == 0 {
+		DeleteNodeFromChildren(node.parentNode, node.Key)
 		return true
 	} else if node != nil && node.IsEnd && len(node.Children) > 0 {
 		node.IsEnd = false
-		compactHandler(node)
+		// compactHandler(node)
 		return true
 	}
 	return false
 }
 
 func Compact(tree *RTree) {
-	//fmt.Printf("Compact tree\n")
 	root := tree.Root
 	for _, n := range root.Children {
 		compactHandler(n)
@@ -268,10 +267,34 @@ func Compact(tree *RTree) {
 
 func compactHandler(node *Node) {
 	if len(node.Children) == 1 && !node.IsEnd {
-		child := node.Children[0]
+		var child *Node
+		for _, value := range node.Children {
+			child = value
+		}
 		node.Key = fmt.Sprintf("%s%s", node.Key, child.Key)
 		node.IsEnd = child.IsEnd
 		node.Value = child.Value
 		node.Children = child.Children
 	}
+}
+
+func appendToMap[K comparable, V any](m1 map[K]V, m2 map[K]V) map[K]V {
+	for key, value := range m2 {
+		m1[key] = value
+	}
+	return m1
+}
+
+func appendChildrenMapToMap(m1 map[string]*Node, nodesToAdd ...map[string]*Node) map[string]*Node {
+	for _, mapToAdd := range nodesToAdd {
+		appendToMap(m1, mapToAdd)
+	}
+	return m1
+}
+
+func appendNodesToMap(m1 map[string]*Node, nodes ...*Node) map[string]*Node {
+	for _, node := range nodes {
+		m1[node.Key] = node
+	}
+	return m1
 }

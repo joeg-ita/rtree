@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"rtree/src" // Adjust import path as needed
+	"rtree/src"
 )
 
 // generateUUID generates a random UUID v4
@@ -91,7 +91,7 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	notFoundCount := 0
 
 	for i, uuid := range uuids {
-		node := src.Search(uuid, *tree)
+		node := src.Search(uuid, tree)
 		if node != nil && node.IsEnd && node.Value == uuid {
 			foundCount++
 		} else {
@@ -153,7 +153,7 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	startTime = time.Now()
 	randomFoundCount := 0
 	for _, uuid := range randomUUIDs {
-		node := src.Search(uuid, *tree)
+		node := src.Search(uuid, tree)
 		if node != nil && node.IsEnd {
 			randomFoundCount++
 		}
@@ -191,7 +191,7 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	verifyStartTime := time.Now()
 	deletedVerifyCount := 0
 	for i := 0; i < deleteCount; i++ {
-		node := src.Search(uuids[i], *tree)
+		node := src.Search(uuids[i], tree)
 		if node == nil || !node.IsEnd {
 			deletedVerifyCount++
 		}
