@@ -30,11 +30,14 @@ func TestDeleteNodeFromChildren(t *testing.T) {
 	nodes := []*r.Node{node1, node2, node3}
 	r.AddNodesToChildren(rtree.Root, nodes...)
 
-	r.DeleteNodeFromChildren(rtree.Root, 1)
+	r.DeleteNodeFromChildren(rtree.Root, node1.Key)
+
+	_, exists1 := rtree.Root.Children[node1.Key]
+	value3, _ := rtree.Root.Children[node3.Key]
 
 	if len(rtree.Root.Children) != 2 ||
-		rtree.Root.Children[0].Key != "test1" ||
-		rtree.Root.Children[1].Key != "test3" {
+		exists1 ||
+		value3.Key != "test3" {
 		t.Errorf(`rtree.Root.Children error len=%d`, len(rtree.Root.Children))
 	}
 }
@@ -53,8 +56,9 @@ func TestAdd(t *testing.T) {
 	if len(rtree.Root.Children) != 3 {
 		t.Errorf(`rtree.Root.Children error len=%d`, len(rtree.Root.Children))
 	}
-	if len(rtree.Root.Children[0].Children) != 2 {
-		t.Errorf(`rtree.Root.Children[0].Children error len=%d`, len(rtree.Root.Children[0].Children))
+	value, _ := rtree.Root.Children[keys[5]]
+	if len(value.Children) != 2 {
+		t.Errorf(`rtree.Root.Children[0].Children error len=%d`, len(value.Children))
 	}
 }
 
@@ -94,8 +98,9 @@ func TestAdd3(t *testing.T) {
 	if len(rtree.Root.Children) != 4 {
 		t.Errorf(`rtree.Root.Children error len=%d`, len(rtree.Root.Children))
 	}
-	if len(rtree.Root.Children[0].Children) != 2 {
-		t.Errorf(`rtree.Root.Children[0].Children error len=%d`, len(rtree.Root.Children[0].Children))
+	value, _ := rtree.Root.Children[keys[0]]
+	if len(value.Children) != 2 {
+		t.Errorf(`rtree.Root.Children[0].Children error len=%d`, len(value.Children))
 	}
 }
 
@@ -110,7 +115,7 @@ func TestSearchKeyIsPresent(t *testing.T) {
 	}
 
 	key := "ciauz"
-	node := r.Search(key, *rtree)
+	node := r.Search(key, rtree)
 	if node != nil {
 		r.PrintNode(node, false)
 	} else {
@@ -129,7 +134,7 @@ func TestSearchKeyIsNotPresent(t *testing.T) {
 	}
 
 	key := "hello"
-	nodeHello := r.Search(key, *rtree)
+	nodeHello := r.Search(key, rtree)
 	if nodeHello != nil {
 		t.Errorf(`Found unexpected key %s`, key)
 	} else {
@@ -148,8 +153,10 @@ func TestSearchInternmediateKeyIsPresent(t *testing.T) {
 		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
 	}
 
+	r.PrintNode(rtree.Root, true)
+
 	key := "cia"
-	node := r.Search(key, *rtree)
+	node := r.Search(key, rtree)
 	if node != nil {
 		r.PrintNode(node, false)
 	} else {
@@ -169,7 +176,7 @@ func TestSearchChunkOfPresentKey(t *testing.T) {
 	}
 
 	key := "uz"
-	node := r.Search(key, *rtree)
+	node := r.Search(key, rtree)
 	if node != nil {
 		t.Errorf(`Found unexpected key %s`, key)
 	} else {
