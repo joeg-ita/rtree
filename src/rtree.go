@@ -53,28 +53,28 @@ func NewRTree() *RTree {
 	}
 }
 
-func AddNodesToChildren(parentNode *Node, nodes ...*Node) *Node {
-	parentNode.Children = appendNodesToMap(parentNode.Children, nodes...)
+func (r *RTree) AddNodesToChildren(parentNode *Node, nodes ...*Node) *Node {
+	parentNode.Children = r.appendNodesToMap(parentNode.Children, nodes...)
 	return parentNode
 }
 
-func AddChildrenToNodeChildren(parentNode *Node, nodesToAdd ...map[string]*Node) *Node {
+func (r *RTree) AddChildrenToNodeChildren(parentNode *Node, nodesToAdd ...map[string]*Node) *Node {
 	for _, v := range nodesToAdd {
-		parentNode.Children = appendChildrenMapToMap(parentNode.Children, v)
+		parentNode.Children = r.appendChildrenMapToMap(parentNode.Children, v)
 	}
 	return parentNode
 }
 
-func DeleteNodeFromChildren(parentNode *Node, key string) *Node {
+func (r *RTree) DeleteNodeFromChildren(parentNode *Node, key string) *Node {
 	delete(parentNode.Children, key)
 	return parentNode
 }
 
-func Add(key string, value string, tree *RTree) bool {
-	return addHandler(key, value, tree.Root)
+func (tree *RTree) Add(key string, value string) bool {
+	return tree.addHandler(key, value, tree.Root)
 }
 
-func addHandler(key string, value string, node *Node) bool {
+func (r *RTree) addHandler(key string, value string, node *Node) bool {
 	result := false
 
 	if key == node.Key {
@@ -84,7 +84,7 @@ func addHandler(key string, value string, node *Node) bool {
 	// Add when is empty
 	if len(node.Children) == 0 {
 		newNode := NewNode(key, value)
-		AddNodesToChildren(node, newNode)
+		r.AddNodesToChildren(node, newNode)
 		return true
 	}
 
@@ -124,7 +124,7 @@ func addHandler(key string, value string, node *Node) bool {
 		}
 		break
 	}
-	var newNode *Node
+
 	if tmpKeyAlreadyPresent && tmpKeyOffset == "" {
 		currentNode := node.Children[childKey]
 		currentNode.IsEnd = true
@@ -132,13 +132,13 @@ func addHandler(key string, value string, node *Node) bool {
 		return true
 	}
 	if selectedNode != nil && tmpKeyAlreadyPresent && tmpKeyOffset != "" {
-		return addHandler(tmpKeyOffset, value, selectedNode)
+		return r.addHandler(tmpKeyOffset, value, selectedNode)
 	}
 	if tmpKeyOrphan == "" && tmpKey != "" && tmpKeyOffset != "" {
-		return addHandler(tmpKeyOffset, value, selectedNode)
+		return r.addHandler(tmpKeyOffset, value, selectedNode)
 	} else if tmpKeyOrphan == "" && tmpKey == "" && tmpKeyOffset == "" {
-		newNode = NewNode(key, value)
-		AddNodesToChildren(node, newNode)
+		newNode := NewNode(key, value)
+		r.AddNodesToChildren(node, newNode)
 		return true
 	} else if tmpKeyOrphan != "" && tmpKey != "" && tmpKeyOffset != "" {
 		currentNode := node.Children[childKey]
@@ -159,11 +159,11 @@ func addHandler(key string, value string, node *Node) bool {
 			orphanNode.Value = originalValue
 		}
 
-		AddChildrenToNodeChildren(orphanNode, currentNode.Children)
+		r.AddChildrenToNodeChildren(orphanNode, currentNode.Children)
 		currentNode.Children = map[string]*Node{}
-		AddNodesToChildren(currentNode, orphanNode)
+		r.AddNodesToChildren(currentNode, orphanNode)
 		newNode := NewNode(tmpKeyOffset, value)
-		AddNodesToChildren(currentNode, newNode)
+		r.AddNodesToChildren(currentNode, newNode)
 
 		return true
 	} else if tmpKeyOrphan != "" && tmpKey != "" && tmpKeyOffset == "" {
@@ -181,25 +181,25 @@ func addHandler(key string, value string, node *Node) bool {
 		delete(node.Children, childKey)
 		node.Children[tmpKey] = currentNode
 
-		AddChildrenToNodeChildren(orphanNode, currentNode.Children)
+		r.AddChildrenToNodeChildren(orphanNode, currentNode.Children)
 		currentNode.Children = map[string]*Node{}
-		AddNodesToChildren(currentNode, orphanNode)
+		r.AddNodesToChildren(currentNode, orphanNode)
 
 		return true
 	} else if tmpKeyOffset != "" && tmpKeyOrphan == "" {
-		newNode = NewNode(tmpKeyOffset, value)
-		AddNodesToChildren(node.Children[childKey], newNode)
+		newNode := NewNode(tmpKeyOffset, value)
+		r.AddNodesToChildren(node.Children[childKey], newNode)
 		return true
 	}
 
 	return result
 }
 
-func Search(key string, tree *RTree) *Node {
-	return searchHandler(key, "", tree.Root, nil, 0)
+func (tree *RTree) Search(key string) *Node {
+	return tree.searchHandler(key, "", tree.Root, nil, 0)
 }
 
-func searchHandler(key string, foundedKeyPart string, node *Node, parentNode *Node, level int) *Node {
+func (r *RTree) searchHandler(key string, foundedKeyPart string, node *Node, parentNode *Node, level int) *Node {
 
 	search := true
 	for search {
@@ -208,6 +208,7 @@ func searchHandler(key string, foundedKeyPart string, node *Node, parentNode *No
 		keyToCheck := fmt.Sprintf("%s%s", foundedKeyPart, key)
 		nod, exists := node.Children[keyToCheck]
 		if exists && nod.IsEnd {
+			nod.parentNode = node
 			return nod
 		} else {
 
@@ -244,10 +245,10 @@ func searchHandler(key string, foundedKeyPart string, node *Node, parentNode *No
 	return nil
 }
 
-func Delete(key string, tree *RTree) bool {
-	node := Search(key, tree)
+func (tree *RTree) Delete(key string) bool {
+	node := tree.Search(key)
 	if node != nil && node.parentNode != nil && node.IsEnd && len(node.Children) == 0 {
-		DeleteNodeFromChildren(node.parentNode, node.Key)
+		tree.DeleteNodeFromChildren(node.parentNode, node.Key)
 		return true
 	} else if node != nil && node.IsEnd && len(node.Children) > 0 {
 		node.IsEnd = false
@@ -257,15 +258,15 @@ func Delete(key string, tree *RTree) bool {
 	return false
 }
 
-func Compact(tree *RTree) {
+func (tree *RTree) Compact() {
 	root := tree.Root
 	for _, n := range root.Children {
-		compactHandler(n)
+		tree.compactHandler(n)
 	}
 
 }
 
-func compactHandler(node *Node) {
+func (r *RTree) compactHandler(node *Node) {
 	if len(node.Children) == 1 && !node.IsEnd {
 		var child *Node
 		for _, value := range node.Children {
@@ -278,21 +279,21 @@ func compactHandler(node *Node) {
 	}
 }
 
-func appendToMap[K comparable, V any](m1 map[K]V, m2 map[K]V) map[K]V {
+func (r *RTree) appendToMap(m1 map[string]*Node, m2 map[string]*Node) map[string]*Node {
 	for key, value := range m2 {
 		m1[key] = value
 	}
 	return m1
 }
 
-func appendChildrenMapToMap(m1 map[string]*Node, nodesToAdd ...map[string]*Node) map[string]*Node {
+func (r *RTree) appendChildrenMapToMap(m1 map[string]*Node, nodesToAdd ...map[string]*Node) map[string]*Node {
 	for _, mapToAdd := range nodesToAdd {
-		appendToMap(m1, mapToAdd)
+		r.appendToMap(m1, mapToAdd)
 	}
 	return m1
 }
 
-func appendNodesToMap(m1 map[string]*Node, nodes ...*Node) map[string]*Node {
+func (r *RTree) appendNodesToMap(m1 map[string]*Node, nodes ...*Node) map[string]*Node {
 	for _, node := range nodes {
 		m1[node.Key] = node
 	}

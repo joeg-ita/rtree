@@ -12,7 +12,7 @@ func TestAddNodesToChildren(t *testing.T) {
 
 	node := r.NewNode("test", "test value")
 
-	r.AddNodesToChildren(rtree.Root, node)
+	rtree.AddNodesToChildren(rtree.Root, node)
 
 	if len(rtree.Root.Children) != 1 {
 		t.Errorf(`rtree.Root.Children want 1 match  %d, nil`, len(rtree.Root.Children))
@@ -28,9 +28,9 @@ func TestDeleteNodeFromChildren(t *testing.T) {
 	node3 := r.NewNode("test3", "test value 3")
 
 	nodes := []*r.Node{node1, node2, node3}
-	r.AddNodesToChildren(rtree.Root, nodes...)
+	rtree.AddNodesToChildren(rtree.Root, nodes...)
 
-	r.DeleteNodeFromChildren(rtree.Root, node1.Key)
+	rtree.DeleteNodeFromChildren(rtree.Root, node1.Key)
 
 	_, exists1 := rtree.Root.Children[node1.Key]
 	value3, _ := rtree.Root.Children[node3.Key]
@@ -49,7 +49,7 @@ func TestAdd(t *testing.T) {
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 	r.PrintNode(rtree.Root, true)
 
@@ -70,7 +70,7 @@ func TestAdd2(t *testing.T) {
 	keys := []string{"test", "te", "testing", "tea"}
 
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 	r.PrintNode(rtree.Root, true)
 
@@ -91,7 +91,7 @@ func TestAdd3(t *testing.T) {
 		"e7d833c4-3e1a-49e9-8338-f7a2f9eeddf1"}
 
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 	r.PrintNode(rtree.Root, true)
 
@@ -111,11 +111,11 @@ func TestSearchKeyIsPresent(t *testing.T) {
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 
 	key := "ciauz"
-	node := r.Search(key, rtree)
+	node := rtree.Search(key)
 	if node != nil {
 		r.PrintNode(node, false)
 	} else {
@@ -130,11 +130,11 @@ func TestSearchKeyIsNotPresent(t *testing.T) {
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 
 	key := "hello"
-	nodeHello := r.Search(key, rtree)
+	nodeHello := rtree.Search(key)
 	if nodeHello != nil {
 		t.Errorf(`Found unexpected key %s`, key)
 	} else {
@@ -150,13 +150,13 @@ func TestSearchInternmediateKeyIsPresent(t *testing.T) {
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 
 	r.PrintNode(rtree.Root, true)
 
 	key := "cia"
-	node := r.Search(key, rtree)
+	node := rtree.Search(key)
 	if node != nil {
 		r.PrintNode(node, false)
 	} else {
@@ -172,11 +172,11 @@ func TestSearchChunkOfPresentKey(t *testing.T) {
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 
 	key := "uz"
-	node := r.Search(key, rtree)
+	node := rtree.Search(key)
 	if node != nil {
 		t.Errorf(`Found unexpected key %s`, key)
 	} else {
@@ -190,11 +190,11 @@ func TestCompact(t *testing.T) {
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 	r.PrintNode(rtree.Root, true)
 	key := "ciauz"
-	result := r.Delete(key, rtree)
+	result := rtree.Delete(key)
 	r.PrintNode(rtree.Root, true)
 	if !result {
 		t.Errorf(`Fail to delete key %s`, key)
@@ -207,11 +207,11 @@ func TestDeleteNodeWithoutChildren(t *testing.T) {
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 
 	keyToDelete := "test"
-	deleteResult := r.Delete(keyToDelete, rtree)
+	deleteResult := rtree.Delete(keyToDelete)
 
 	if !deleteResult {
 		r.PrintNode(rtree.Root, true)
@@ -225,11 +225,11 @@ func TestDeleteNodeWithChildrenAndCompact(t *testing.T) {
 
 	keys := []string{"ciao", "ciaone", "ciauz", "help", "helper", "cia", "test"}
 	for _, k := range keys {
-		r.Add(k, fmt.Sprintf("val of %s", k), rtree)
+		rtree.Add(k, fmt.Sprintf("val of %s", k))
 	}
 
 	keyToDelete := "ciao"
-	deleteResult := r.Delete(keyToDelete, rtree)
+	deleteResult := rtree.Delete(keyToDelete)
 
 	if !deleteResult {
 		r.PrintNode(rtree.Root, true)

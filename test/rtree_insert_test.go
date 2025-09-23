@@ -58,7 +58,7 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	failureCount := 0
 
 	for i, uuid := range uuids {
-		if src.Add(uuid, uuid, tree) {
+		if tree.Add(uuid, uuid) {
 			successCount++
 			// fmt.Printf("UUID %d: %s\n", i, uuid)
 		} else {
@@ -91,7 +91,7 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	notFoundCount := 0
 
 	for i, uuid := range uuids {
-		node := src.Search(uuid, tree)
+		node := tree.Search(uuid)
 		if node != nil && node.IsEnd && node.Value == uuid {
 			foundCount++
 		} else {
@@ -126,21 +126,6 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	fmt.Printf("   📊 Avg depth: %.2f\n", treeStats.AvgDepth)
 	fmt.Printf("   🎯 Terminal nodes: %d\n", treeStats.TerminalNodes)
 
-	// Test 4: Compact Operation
-	fmt.Println("\n🗜️  Test 4: COMPACT Operation")
-	fmt.Println(strings.Repeat("-", 30))
-
-	startTime = time.Now()
-	src.Compact(tree)
-	compactDuration := time.Since(startTime)
-
-	treeStatsAfterCompact := analyzeTreeStructure(tree.Root, 0)
-	fmt.Printf("📊 Compact Results:\n")
-	fmt.Printf("   ⏱️  Duration: %v\n", compactDuration)
-	fmt.Printf("   🔢 Nodes before: %d\n", treeStats.TotalNodes)
-	fmt.Printf("   🔢 Nodes after: %d\n", treeStatsAfterCompact.TotalNodes)
-	fmt.Printf("   📉 Nodes reduced: %d\n", treeStats.TotalNodes-treeStatsAfterCompact.TotalNodes)
-
 	// Test 5: Random Search Test (search some random UUIDs that don't exist)
 	fmt.Println("\n🎲 Test 5: RANDOM SEARCH Test (Non-existent UUIDs)")
 	fmt.Println(strings.Repeat("-", 50))
@@ -153,7 +138,7 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	startTime = time.Now()
 	randomFoundCount := 0
 	for _, uuid := range randomUUIDs {
-		node := src.Search(uuid, tree)
+		node := tree.Search(uuid)
 		if node != nil && node.IsEnd {
 			randomFoundCount++
 		}
@@ -175,7 +160,7 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	deleteSuccessCount := 0
 
 	for i := 0; i < deleteCount; i++ {
-		if src.Delete(uuids[i], tree) {
+		if tree.Delete(uuids[i]) {
 			deleteSuccessCount++
 		}
 	}
@@ -191,7 +176,7 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	verifyStartTime := time.Now()
 	deletedVerifyCount := 0
 	for i := 0; i < deleteCount; i++ {
-		node := src.Search(uuids[i], tree)
+		node := tree.Search(uuids[i])
 		if node == nil || !node.IsEnd {
 			deletedVerifyCount++
 		}
@@ -199,6 +184,21 @@ func TestRTreeWithUUIDs(t *testing.T) {
 	verifyDuration := time.Since(verifyStartTime)
 
 	fmt.Printf("   ✅ Verified deleted: %d/%d (in %v)\n", deletedVerifyCount, deleteCount, verifyDuration)
+
+	// Test 4: Compact Operation
+	fmt.Println("\n🗜️  Test 4: COMPACT Operation")
+	fmt.Println(strings.Repeat("-", 30))
+
+	startTime = time.Now()
+	tree.Compact()
+	compactDuration := time.Since(startTime)
+
+	treeStatsAfterCompact := analyzeTreeStructure(tree.Root, 0)
+	fmt.Printf("📊 Compact Results:\n")
+	fmt.Printf("   ⏱️  Duration: %v\n", compactDuration)
+	fmt.Printf("   🔢 Nodes before: %d\n", treeStats.TotalNodes)
+	fmt.Printf("   🔢 Nodes after: %d\n", treeStatsAfterCompact.TotalNodes)
+	fmt.Printf("   📉 Nodes reduced: %d\n", treeStats.TotalNodes-treeStatsAfterCompact.TotalNodes)
 
 	// Final Summary
 	fmt.Println("\n" + strings.Repeat("=", 60))
